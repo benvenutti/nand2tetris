@@ -1,0 +1,51 @@
+# depslib dependency file v1.0
+1393537541 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/main.cpp
+	<iostream>
+	<string>
+	<fstream>
+	<unistd.h>
+	"Assembler.h"
+	"FileHandler.h"
+
+1393681978 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/include/Assembler.h
+	"Parser.h"
+	"Code.h"
+	"SymbolTable.h"
+	<iostream>
+	<string>
+	<map>
+
+1393505584 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/include/Parser.h
+	<iostream>
+	<string>
+
+1393438186 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/include/Code.h
+	<string>
+
+1393440132 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/include/SymbolTable.h
+	<string>
+	<map>
+
+1393438218 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/include/FileHandler.h
+	<string>
+
+1393537503 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/src/Assembler.cpp
+	"Assembler.h"
+	<iomanip>
+	<bitset>
+
+1393438192 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/src/Code.cpp
+	"Code.h"
+	<algorithm>
+
+1393438226 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/src/FileHandler.cpp
+	"FileHandler.h"
+	<sys/stat.h>
+	<dirent.h>
+
+1393505828 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/src/Parser.cpp
+	"Parser.h"
+
+1393440160 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/src/SymbolTable.cpp
+	"SymbolTable.h"
+

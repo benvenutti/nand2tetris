@@ -1,0 +1,42 @@
+# depslib dependency file v1.0
+1393504898 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/main.cpp
+	<iostream>
+	<string>
+	<fstream>
+	<unistd.h>
+	"Assembler.h"
+	"FileHandler.h"
+
+1393682100 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/src/Assembler.cpp
+	"Assembler.h"
+	<iomanip>
+	<bitset>
+
+1392951944 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/src/Code.cpp
+	"Code.h"
+	<algorithm>
+
+1393438350 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/src/FileHandler.cpp
+	"FileHandler.h"
+	<sys/stat.h>
+	<dirent.h>
+
+1393505834 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/src/Parser.cpp
+	"Parser.h"
+
+1393682192 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/include/Assembler.h
+	<iostream>
+	<string>
+	"Parser.h"
+	"Code.h"
+
+1393505526 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/include/Parser.h
+	<iostream>
+	<string>
+
+1393386526 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/include/Code.h
+	<string>
+
+1393386490 /home/diogo/Dropbox/nand2tetris/projects/06/c++/assemblerL/include/FileHandler.h
+	<string>
+
