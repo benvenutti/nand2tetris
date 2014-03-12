@@ -1,9 +1,9 @@
 #include "SymbolTable.h"
 
-void SymbolTable::loadMap(map<string, int> map)
+void SymbolTable::loadMap(map<string, int> symbolMap)
 {
 	table.clear();
-	table = map;
+	table = symbolMap;
 }
 
 void SymbolTable::addEntry(string symbol, int address)

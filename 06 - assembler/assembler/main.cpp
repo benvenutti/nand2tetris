@@ -77,7 +77,7 @@ bool isAsmFile(string input)
 int main(int argc, char** argv)
 {
 	if (argc == 1) {
-		cerr << "usage: " << "hass" << " [-v|-V|-t] input-filename.asm" << endl;
+		cerr << "usage: " << "hass" << " [-v|-V|-t] input-filename.asm $test$" << endl;
 		cerr << "       -v verbose" << endl;
 		cerr << "       -V very verbose" << endl;
 		cerr << "       -t output symbol table" << endl;

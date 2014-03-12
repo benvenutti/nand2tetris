@@ -49,3 +49,53 @@
 1393440160 source:/home/diogo/Dropbox/nand2tetris/projects/06/c++/assembler/src/SymbolTable.cpp
 	"SymbolTable.h"
 
+1394596270 source:/home/diogo/tecs/06 - assembler/assembler/main.cpp
+	<iostream>
+	<string>
+	<fstream>
+	<unistd.h>
+	"Assembler.h"
+	"FileHandler.h"
+
+1393681978 /home/diogo/tecs/06 - assembler/assembler/include/Assembler.h
+	"Parser.h"
+	"Code.h"
+	"SymbolTable.h"
+	<iostream>
+	<string>
+	<map>
+
+1393505584 /home/diogo/tecs/06 - assembler/assembler/include/Parser.h
+	<iostream>
+	<string>
+
+1393438186 /home/diogo/tecs/06 - assembler/assembler/include/Code.h
+	<string>
+
+1394595860 /home/diogo/tecs/06 - assembler/assembler/include/SymbolTable.h
+	<string>
+	<map>
+
+1393438218 /home/diogo/tecs/06 - assembler/assembler/include/FileHandler.h
+	<string>
+
+1394595541 source:/home/diogo/tecs/06 - assembler/assembler/src/Assembler.cpp
+	"Assembler.h"
+	<iomanip>
+	<bitset>
+
+1393438192 source:/home/diogo/tecs/06 - assembler/assembler/src/Code.cpp
+	"Code.h"
+	<algorithm>
+
+1393438226 source:/home/diogo/tecs/06 - assembler/assembler/src/FileHandler.cpp
+	"FileHandler.h"
+	<sys/stat.h>
+	<dirent.h>
+
+1394595816 source:/home/diogo/tecs/06 - assembler/assembler/src/SymbolTable.cpp
+	"SymbolTable.h"
+
+1394595710 source:/home/diogo/tecs/06 - assembler/assembler/src/Parser.cpp
+	"Parser.h"
+

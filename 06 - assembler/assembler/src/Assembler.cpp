@@ -44,8 +44,8 @@ void Assembler::outputSymbolTable(ostream& symOutputStream)
 	if (!predefinedMap.empty()) { // if there are predefined symbols, print them
 		symOutputStream << "**** predefined symbols:" << endl << endl;
 
-		for (map<string,int>::iterator it = predefinedMap.begin(); it != predefinedMap.end(); it++)
-			symOutputStream << "0x" << setfill('0') << setw(4) << setbase(16) << it->second << " " << it->first << endl;
+		for (auto& it: predefinedMap)
+			symOutputStream << "0x" << setfill('0') << setw(4) << setbase(16) << it.second << " " << it.first << endl;
 
 		symOutputStream << endl;
 	}
@@ -53,11 +53,11 @@ void Assembler::outputSymbolTable(ostream& symOutputStream)
 	map<string, int> table = symbolTable.getTable();
 	symOutputStream << "**** " << outputName << " symbols:" << endl << endl;
 
-	for (map<string,int>::iterator it = table.begin(); it != table.end(); it++) {
-		if (predefinedMap.find(it->first) != predefinedMap.end())
+	for (auto& it: table) {
+		if (predefinedMap.find(it.first) != predefinedMap.end())
 			continue;
 
-		symOutputStream << "0x" << setfill('0') << setw(4) << setbase(16) << it->second << " " << it->first << endl;
+		symOutputStream << "0x" << setfill('0') << setw(4) << setbase(16) << it.second << " " << it.first << endl;
 	}
 }
 

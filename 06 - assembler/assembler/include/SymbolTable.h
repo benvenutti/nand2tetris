@@ -11,13 +11,13 @@ class SymbolTable
 
 	public:
 
-		/**
-			Loads all entries of a map<string, int> to the symbol table. Previous
+        /**
+            Loads all entries of a map<string, int> to the symbol table. Previous
 			entries will be erased.
 
-			@param map A map with symbols to be loaded into the symbol table.
+			@param symbolMap A map with symbols to be loaded into the symbol table.
 		*/
-		void loadMap(map<string, int> map);
+		void loadMap(map<string, int> symbolMap);
 
 		/**
 			Adds the pair <symbol, address> to the table.
@@ -48,7 +48,7 @@ class SymbolTable
 		int getAddress(string symbol);
 
 		/**
-			Returns a map populated with pairs <symbol, address>, where symbol is a string and 
+			Returns a map populated with pairs <symbol, address>, where symbol is a string and
 			address an int.
 
 			@return A map<string, int> with the symbol table.
