@@ -1,0 +1,122 @@
+# depslib dependency file v1.0
+1393779361 source:/home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/main.cpp
+	<iostream>
+	<string>
+	<unistd.h>
+	<fstream>
+	"VmTranslator.h"
+	"FileHandler.h"
+
+1393683319 source:/home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/src/Parser.cpp
+	"Parser.h"
+	<sstream>
+	<iostream>
+
+1393682812 /home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/include/Parser.h
+	"VmCommandType.h"
+	<string>
+	<fstream>
+	<vector>
+
+1393682904 /home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/include/VmCommandType.h
+
+1394065307 source:/home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/src/CodeWriter.cpp
+	"CodeWriter.h"
+	"FileHandler.h"
+
+1393683298 /home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/include/CodeWriter.h
+	"VmCommandType.h"
+	<iostream>
+	<string>
+
+1393780541 /home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/include/FileHandler.h
+	<vector>
+	<string>
+
+1393683594 source:/home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/src/FileHandler.cpp
+	"FileHandler.h"
+	<sys/stat.h>
+	<unistd.h>
+	<dirent.h>
+	<iostream>
+
+1394065356 source:/home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/src/VmTranslator.cpp
+	"VmTranslator.h"
+	"VmCommandType.h"
+	"Parser.h"
+	"CodeWriter.h"
+	<fstream>
+
+1393683361 /home/diogo/Dropbox/nand2tetris/projects/07/c++/vmTranslator/include/VmTranslator.h
+	"FileHandler.h"
+	<iostream>
+	<string>
+
+1394132384 source:/home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/src/FileHandler.cpp
+	"FileHandler.h"
+	<sys/stat.h>
+	<unistd.h>
+	<dirent.h>
+	<iostream>
+
+1394132732 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/FileHandler.h
+	<vector>
+	<string>
+
+1394214886 source:/home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/src/CodeWriter.cpp
+	"CodeWriter.h"
+	"FileHandler.h"
+
+1394304463 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/CodeWriter.h
+	"VmCommandType.h"
+	<iostream>
+	<string>
+
+1394316108 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/VmCommandType.h
+
+1394411833 source:/home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/src/CodeWriterOptimised.cpp
+	"CodeWriterOptimised.h"
+
+1394411265 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/CodeWriterOptimised.h
+	"CodeWriter.h"
+
+1394317152 source:/home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/src/Parser.cpp
+	"Parser.h"
+	<sstream>
+	<iostream>
+
+1394316512 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/Parser.h
+	"VmCommandType.h"
+	"VmCommandOptType.h"
+	<string>
+	<fstream>
+	<vector>
+
+1394412109 source:/home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/src/VmTranslator.cpp
+	"VmTranslator.h"
+	"VmCommandType.h"
+	"Parser.h"
+	"CodeWriter.h"
+	"CodeWriterOptimised.h"
+	<fstream>
+	<list>
+
+1394318181 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/VmTranslator.h
+	"CodeWriter.h"
+	"CodeWriterOptimised.h"
+	"Parser.h"
+	"FileHandler.h"
+	<iostream>
+	<string>
+	<vector>
+
+1394410515 source:/home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/main.cpp
+	<iostream>
+	<string>
+	<unistd.h>
+	<fstream>
+	"VmTranslator.h"
+	"FileHandler.h"
+
+1394316156 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/VmCommandOptType.h
+
