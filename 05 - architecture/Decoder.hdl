@@ -1,0 +1,25 @@
+/**
+ * Decoder for the CPU.
+ */
+
+CHIP Decoder {
+    IN in[16];
+    OUT i, a, c1, c2, c3, c4, c5, c6, d1, d2, d3, j1, j2, j3;
+
+    PARTS:
+    
+    And(a=in[15], b=true, out=i, out=isel);
+    Mux(a=false, b=in[12], sel=isel, out=a);
+    Mux(a=false, b=in[11], sel=isel, out=c1);
+    Mux(a=false, b=in[10], sel=isel, out=c2);
+    Mux(a=false, b=in[9], sel=isel, out=c3);
+    Mux(a=false, b=in[8], sel=isel, out=c4);
+    Mux(a=false, b=in[7], sel=isel, out=c5);
+    Mux(a=false, b=in[6], sel=isel, out=c6);
+    Mux(a=false, b=in[5], sel=isel, out=d1);
+    Mux(a=false, b=in[4], sel=isel, out=d2);
+    Mux(a=false, b=in[3], sel=isel, out=d3);
+    Mux(a=false, b=in[2], sel=isel, out=j1);
+    Mux(a=false, b=in[1], sel=isel, out=j2);
+    Mux(a=false, b=in[0], sel=isel, out=j3);
+}
