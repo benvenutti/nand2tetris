@@ -19,6 +19,16 @@ class FileHandler
 		FileHandler(string input);
 
 		/**
+			
+		*/
+		string getPath();
+
+		/**
+
+		*/
+		string getCurrentFileName();
+
+		/**
 			Is the object handling a file?
 
 			@return True if the object is handling a file. False otherwise.
@@ -173,6 +183,8 @@ class FileHandler
 		string input;                   /**< Input string. */
 
 		string path;                    /**< Path from @ref input string. */
+
+		string currentFileName; 		/**< */
 
 		vector<string> files;           /**< Vector with VM file names. */
 

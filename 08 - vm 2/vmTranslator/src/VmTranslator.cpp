@@ -1,12 +1,7 @@
 #include "VmTranslator.h"
-#include "VmCommandType.h"
-#include "Parser.h"
-#include "CodeWriter.h"
-#include "CodeWriterOptimised.h"
 #include <fstream>
-#include <list>
 
-VmTranslator::VmTranslator(string input, ostream& outputStream, bool verbose, bool bootstrap, bool comments, bool optimise)
+VmTranslator::VmTranslator(string input, ostream& outputStream, bool verbose, bool bootstrap, bool comments, bool optimise, bool unusedFunctions)
 	: input(input),
 	  outputStream(outputStream),
 	  fileHandler(input),
@@ -14,9 +9,10 @@ VmTranslator::VmTranslator(string input, ostream& outputStream, bool verbose, bo
 	  bootstrap(bootstrap),
 	  comments(comments),
 	  optimise(optimise),
-	  vmTransTitle("vm2hack"),
+	  unusedFunctions(unusedFunctions),
+	  vmTransTitle("vm2asm"),
 	  vmTransSubtitle("vm translator (nand2tetris, chap. 8)"),
-	  vmTransVersion("0.1")
+	  vmTransVersion("0.2")
 {
 }
 
@@ -25,359 +21,536 @@ void VmTranslator::translate()
     if (verbose)
         printHeader();
 
-    CodeWriter* codeWriter;
+    if (unusedFunctions) {
+        scanFunctionCalls("Main", "Main.main");
 
-    if (!optimise)
-        codeWriter = new CodeWriter(outputStream, fileHandler.getProgramName(), comments);
+        if (bootstrap) {
+            funcCallMap.at("Sys").insert("Sys.init"); // MAY NOT HAVE "Sys"
+            scanFunctionCalls("Sys", "Sys.halt");
+        }
+    }
+
+    int fileCount;
+
+    if (optimise)
+        fileCount = translateOptimised();
     else
-        codeWriter = new CodeWriterOptimised(outputStream, fileHandler.getProgramName(), comments);
+        fileCount = translateNonOptimised();
 
-	if (bootstrap) {
+    if (verbose) {
+        cout << endl;
+        cout << "Number of files translated: " << fileCount << endl;
+        cout << "done" << endl << endl;
+    }
+}
+
+int VmTranslator::numSkippedFunctions()
+{
+    return skippedFuncVec.size();
+}
+
+void VmTranslator::printSkippedFunctions()
+{
+    for (auto& it: skippedFuncVec)
+        cout << "- " << it << endl;
+}
+
+void VmTranslator::translateVmCommand(Parser& parser, CodeWriter* codeWriter)
+{
+    switch (parser.commandType()) {
+
+        case VmCommandType::C_ARITHMETIC:
+            codeWriter->writeArithmetic(parser.getCommand());
+            break;
+
+        case VmCommandType::C_PUSH:
+        case VmCommandType::C_POP:
+            codeWriter->writePushPop(parser.commandType(), parser.arg1(), parser.arg2());
+            break;
+
+        case VmCommandType::C_LABEL:
+            codeWriter->writeLabel(parser.arg1());
+            break;
+
+        case VmCommandType::C_GOTO:
+            codeWriter->writeGoto(parser.arg1());
+            break;
+
+        case VmCommandType::C_IF:
+            codeWriter->writeIf(parser.arg1());
+            break;
+
+        case VmCommandType::C_FUNCTION:
+            if (verbose)
+                cout << "  ~ function " << parser.arg1() << " (allocates " << parser.arg2() << " local vars)" << endl;
+
+            codeWriter->writeFunction(parser.arg1(), parser.arg2());
+            break;
+
+        case VmCommandType::C_CALL:
+            codeWriter->writeCall(parser.arg1(), parser.arg2());
+            break;
+
+        case VmCommandType::C_RETURN:
+            codeWriter->writeReturn();
+            break;
+
+    }
+}
+
+int VmTranslator::translateNonOptimised()
+{
+    CodeWriter* codeWriter = new CodeWriter(outputStream, fileHandler.getProgramName(), comments);
+
+    if (bootstrap) {
         codeWriter->writeInit();
 
-		if (verbose)
-			cout << "bootstrap code written" << endl;
-	}
+        if (verbose)
+            cout << "bootstrap code written" << endl;
+    }
 
-	string file;
-	int fileCount = 0;
+    string file;
+    int fileCount = 0;
 
-	while (fileHandler.nextVmFile(file)) {
+    while (fileHandler.nextVmFile(file)) {
 
-		if (verbose) {
-			cout << "processing file " << FileHandler::removePath(file) << " -> module: ";
-			cout << FileHandler::getProgramName(file) << endl;
-		}
+        if (verbose) {
+            cout << "processing file " << FileHandler::removePath(file) << " -> module: ";
+            cout << FileHandler::getProgramName(file) << endl;
+        }
 
-		ifstream inputFile(file);
-		if (!inputFile.good()) {
-			cerr << "error: unable to open file \"" << file << "\"" << endl;
-			continue;
-		}
+        ifstream inputFile(file);
+        if (!inputFile.good()) {
+            cerr << "error: unable to open file \"" << file << "\"" << endl;
+            continue;
+        }
 
-		Parser parser(inputFile);
-		codeWriter->setFileName(file);
+        Parser parser(inputFile);
+        codeWriter->setFileName(file);
 
-        if (!optimise)
-            translateNonOptimised(parser, codeWriter);
-        else
-            translateOptimised(parser, (CodeWriterOptimised*) codeWriter);
+        while (parser.advance()) {
 
-		fileCount++;
+            if (parser.commandType() == VmCommandType::C_FUNCTION) {
 
-	}
+                string arg1 = parser.arg1();
+                string moduleName = arg1.substr(0, arg1.find(".")); // ???????????? FUNC
+
+                if (funcCallMap.find(moduleName) != funcCallMap.end()) {
+
+                    if (funcCallMap.at(moduleName).find(arg1) == funcCallMap.at(moduleName).end()) {
+
+                        skippedFuncVec.push_back(arg1);
+
+                        while (parser.advance() && parser.commandType() != VmCommandType::C_RETURN);
+
+                        continue;
+                    }
+                }
+            }
+
+            translateVmCommand(parser, codeWriter);
+        }
+
+        fileCount++;
+
+    }
 
     delete codeWriter;
 
-    if (verbose) {
-		cout << endl;
-		cout << "Number of files translated: " << fileCount << endl;
-		cout << "done" << endl << endl;
-	}
+    return fileCount;
 }
 
-void VmTranslator::translateNonOptimised(Parser& parser, CodeWriter* codeWriter)
+bool VmTranslator::advanceParser(Parser& parser, int num)
 {
-    while (parser.advance()) {
+    for (int i = 0; i < num; i++) {
+        bool ret = parser.advance();
 
-        switch (parser.commandType()) {
+        if (!ret)
+            return false;
+    }
 
-            case VmCommandType::C_ARITHMETIC:
-                codeWriter->writeArithmetic(parser.getCommand());
-                break;
+    if (newFileHasStarted) {
+        num--;
+        newFileHasStarted = false;
+    }
 
-            case VmCommandType::C_PUSH:
-            case VmCommandType::C_POP:
-                codeWriter->writePushPop(parser.commandType(), parser.arg1(), parser.arg2());
-                break;
+    vmCmdVec.erase(vmCmdVec.begin(), vmCmdVec.begin() + num);
+    vmArg2Vec.erase(vmArg2Vec.begin(), vmArg2Vec.begin() + num);
 
-            case VmCommandType::C_LABEL:
-                codeWriter->writeLabel(parser.arg1());
-                break;
+    return true;
+}
 
-            case VmCommandType::C_GOTO:
-                codeWriter->writeGoto(parser.arg1());
-                break;
+int VmTranslator::translateOptimised()
+{
+    CodeWriterOpt * codeWriterOpt = new CodeWriterOpt(outputStream, fileHandler.getProgramName(), comments);
 
-            case VmCommandType::C_IF:
-                codeWriter->writeIf(parser.arg1());
-                break;
+    if (bootstrap) {
+        codeWriterOpt->writeInit();
 
-            case VmCommandType::C_FUNCTION:
-                if (verbose)
-                    cout << "  ~ function " << parser.arg1() << " (allocates " << parser.arg2() << " local vars)" << endl;
+        if (verbose)
+            cout << "bootstrap code written" << endl;
+    }
 
-                codeWriter->writeFunction(parser.arg1(), parser.arg2());
-                break;
+    codeWriterOpt->writeGlobalFunctions();
 
-            case VmCommandType::C_CALL:
-                codeWriter->writeCall(parser.arg1(), parser.arg2());
-                break;
+    string file;
+    int fileCount = 0;
 
-            case VmCommandType::C_RETURN:
-                codeWriter->writeReturn();
-                break;
+    while (fileHandler.nextVmFile(file)) {
 
+        if (verbose) {
+            cout << "processing file " << FileHandler::removePath(file) << " -> module: ";
+            cout << FileHandler::getProgramName(file) << endl;
         }
-    }
-}
 
-void VmTranslator::translateOptimised(Parser& parser, CodeWriterOptimised* codeWriterOpt)
-{
-    static bool globalFunctions = true;
-
-    if (globalFunctions) {
-        codeWriterOpt->writeGlobalFunctions();
-        globalFunctions = false;
-    }
-
-    vmCmdList.clear();
-
-    while (parser.advance())
-        vmCmdList.push_back(parser.commandOptType());
-
-    parser.reset();
-
-    while (parser.advance()) {
-
-        if (translateOptimisedSequence(parser, codeWriterOpt))
+        ifstream inputFile(file);
+        if (!inputFile.good()) {
+            cerr << "error: unable to open file \"" << file << "\"" << endl;
             continue;
+        }
 
-        switch (parser.commandType()) {
+        vmCmdVec.clear();
+        vmArg2Vec.clear();
 
-            case VmCommandType::C_ARITHMETIC:
-                codeWriterOpt->writeArithmetic(parser.getCommand());
-                break;
+        Parser parser(inputFile);
+        codeWriterOpt->setFileName(file);
 
-            case VmCommandType::C_PUSH:
-            case VmCommandType::C_POP:
-                codeWriterOpt->writePushPop(parser.commandType(), parser.arg1(), parser.arg2());
-                break;
+        while (parser.advance()) {
 
-            case VmCommandType::C_LABEL:
-                codeWriterOpt->writeLabel(parser.arg1());
-                break;
+            vmCmdVec.push_back(parser.commandOptType());
 
-            case VmCommandType::C_GOTO:
-                codeWriterOpt->writeGoto(parser.arg1());
-                break;
-
-            case VmCommandType::C_IF:
-                codeWriterOpt->writeIf(parser.arg1());
-                break;
-
-            case VmCommandType::C_FUNCTION:
-                if (verbose)
-                    cout << "  ~ function " << parser.arg1() << " (allocates " << parser.arg2() << " local vars)" << endl;
-
-                codeWriterOpt->writeFunction(parser.arg1(), parser.arg2());
-                break;
-
-            case VmCommandType::C_CALL:
-                codeWriterOpt->writeCall(parser.arg1(), parser.arg2());
-                break;
-
-            case VmCommandType::C_RETURN:
-                codeWriterOpt->writeReturn();
-                break;
+            if (parser.commandOptType() == VmCommandOptType::C_PUSH_CONSTANT)
+                vmArg2Vec.push_back(parser.arg2());
+            else
+                vmArg2Vec.push_back(0);
 
         }
 
-        if (!vmCmdList.empty())
-            vmCmdList.erase(vmCmdList.begin());
+        parser.reset();
+        newFileHasStarted = true;
+
+        while (advanceParser(parser)) {
+
+        // ??????????
+        /*
+        if (fileHandler.currentFile == "OS/Sys.vm") {
+
+            bool loop = true;
+
+            while (loop) {
+
+                if (parser.commandType() == VmCommandType::C_CALL) {
+
+                    string moduleName = FileHandler::getProgramName(parser.arg1());
+
+                    if (calls.find(moduleName) == calls.end() && moduleName != "Main" && moduleName != "Sys") {
+                        cout << "out: " << parser.arg1() << endl;
+                        updateLookAhead(parser, 2, 1);
+                        break;
+                    }
+                }
+
+                updateLookAhead(parser, 1, 1);
+                if (parser.commandType() == VmCommandType::C_RETURN)
+                    loop = false;
+            }
+
+        }
+        */
+
+            if (parser.commandType() == VmCommandType::C_FUNCTION) {
+
+                string arg1 = parser.arg1();
+                string moduleName = arg1.substr(0, arg1.find(".")); // ???????????? FUNC
+
+                if (funcCallMap.find(moduleName) != funcCallMap.end()) {
+
+                    if (funcCallMap.at(moduleName).find(arg1) == funcCallMap.at(moduleName).end()) {
+
+                        skippedFuncVec.push_back(arg1);
+
+                        while (advanceParser(parser) && parser.commandType() != VmCommandType::C_RETURN);
+
+                        continue;
+
+                    }
+                }
+            }
+
+            if (translateOptimisedSequence(parser, codeWriterOpt))
+                continue;
+
+            translateVmCommand(parser, codeWriterOpt);
+
+        }
+
+        fileCount++;
+
+    }
+
+    return fileCount;
+}
+
+void VmTranslator::printCalls()
+{
+    cout << "total entries in map: " << funcCallMap.size() << endl << endl;
+
+    for (auto& it: funcCallMap) {
+
+        cout << "module: " << it.first << endl;
+
+        for (auto& setIt: it.second) {
+            cout << "  + call " << setIt << endl;
+        }
 
     }
 }
 
-bool VmTranslator::translateOptimisedSequence(Parser& parser, CodeWriterOptimised* codeWriterOpt)
+bool VmTranslator::translateOptimisedSequence(Parser& parser, CodeWriterOpt* codeWriterOpt)
 {
-    if (vmCmdList.size() >= 3) {
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
-            vmCmdList.at(1) == VmCommandOptType::C_PUSH_LOCAL &&
-            vmCmdList.at(2) == VmCommandOptType::C_ARITHMETIC_ADD)
+    // first look for push constant sequences
+
+    if (vmCmdVec.size() >= 2) {
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT) {
+
+            int constant = parser.arg2();
+            int num = 1;
+
+            while (vmCmdVec.at(num) == VmCommandOptType::C_PUSH_CONSTANT &&
+                   vmArg2Vec.at(num) == constant)
+                { num++; }
+
+            if (num > 1) {
+
+                codeWriterOpt->writePushConstantXTimes(constant, num);
+                advanceParser(parser, num - 1);
+
+                return true;
+
+            }
+        }
+    }
+
+    // second look for push constant + push local + add
+
+    if (vmCmdVec.size() >= 3) {
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
+            vmCmdVec.at(1) == VmCommandOptType::C_PUSH_LOCAL &&
+            vmCmdVec.at(2) == VmCommandOptType::C_ARITHMETIC_ADD)
             {
                 int constant = parser.arg2();
-                parser.advance();
+                advanceParser(parser);
                 int index = parser.arg2();
+                codeWriterOpt->writeSeq3PushConstantPushLocalAdd(constant, index);
+                advanceParser(parser);
 
-                codeWriterOpt->writeSeqPushConstantPushTempAdd(constant, index);
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 3);
-                parser.advance();
                 return true;
             }
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_LOCAL &&
+            vmCmdVec.at(1) == VmCommandOptType::C_PUSH_CONSTANT &&
+            vmCmdVec.at(2) == VmCommandOptType::C_ARITHMETIC_ADD)
+            {
+                int index = parser.arg2();
+                advanceParser(parser);
+                int constant = parser.arg2();
+
+                codeWriterOpt->writeSeq3PushConstantPushLocalAdd(constant, index);
+                advanceParser(parser);
+
+                return true;
+            }
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_LOCAL &&
+            vmCmdVec.at(1) == VmCommandOptType::C_PUSH_STATIC &&
+            vmCmdVec.at(2) == VmCommandOptType::C_ARITHMETIC_ADD)
+            {
+                int localIndex = parser.arg2();
+                advanceParser(parser);
+                int staticIndex = parser.arg2();
+                codeWriterOpt->writeSeq3PushLocalPushStaticAdd(localIndex, staticIndex);
+                advanceParser(parser);
+
+                return true;
+            }
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_LOCAL &&
+            vmCmdVec.at(1) == VmCommandOptType::C_PUSH_LOCAL &&
+            vmCmdVec.at(2) == VmCommandOptType::C_ARITHMETIC_ADD)
+            {
+                int local1Index = parser.arg2();
+                advanceParser(parser);
+                int local2Index = parser.arg2();
+                codeWriterOpt->writeSeq3PushLocalPushLocalAdd(local1Index, local2Index);
+                advanceParser(parser);
+
+                return true;
+            }
+
     }
 
-    if (vmCmdList.size() >= 2) {
+    // else look for the following sequences...
 
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
-            vmCmdList.at(1) == VmCommandOptType::C_ARITHMETIC_ADD)
+    if (vmCmdVec.size() >= 2) {
+
+        // starts with PUSH CONSTANT
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
+            vmCmdVec.at(1) == VmCommandOptType::C_ARITHMETIC_ADD)
             {
-                codeWriterOpt->writeSeqPushConstantAdd(parser.arg2());
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
-                parser.advance();
+                codeWriterOpt->writeSeq2PushConstantAdd(parser.arg2());
+                advanceParser(parser);
+
                 return true;
             }
 
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
-            vmCmdList.at(1) == VmCommandOptType::C_ARITHMETIC_SUB)
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
+            vmCmdVec.at(1) == VmCommandOptType::C_ARITHMETIC_SUB)
             {
-                codeWriterOpt->writeSeqPushConstantSub(parser.arg2());
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
-                parser.advance();
+                codeWriterOpt->writeSeq2PushConstantSub(parser.arg2());
+                advanceParser(parser);
+
                 return true;
             }
 
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
-            vmCmdList.at(1) == VmCommandOptType::C_ARITHMETIC_NEG)
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
+            vmCmdVec.at(1) == VmCommandOptType::C_ARITHMETIC_NEG)
             {
-                codeWriterOpt->writeSeqPushConstantNeg(parser.arg2());
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
-                parser.advance();
+                codeWriterOpt->writeSeq2PushConstantNeg(parser.arg2());
+                advanceParser(parser);
+
                 return true;
             }
 
-        if ((vmCmdList.at(0) == VmCommandOptType::C_PUSH_ARGUMENT ||
-             vmCmdList.at(0) == VmCommandOptType::C_PUSH_LOCAL ||
-             vmCmdList.at(0) == VmCommandOptType::C_PUSH_THIS ||
-             vmCmdList.at(0) == VmCommandOptType::C_PUSH_THAT) &&
-             vmCmdList.at(1) == VmCommandOptType::C_ARITHMETIC_ADD)
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
+            (vmCmdVec.at(1) == VmCommandOptType::C_POP_ARGUMENT ||
+             vmCmdVec.at(1) == VmCommandOptType::C_POP_LOCAL ||
+             vmCmdVec.at(1) == VmCommandOptType::C_POP_THIS ||
+             vmCmdVec.at(1) == VmCommandOptType::C_POP_THAT))
             {
-                codeWriterOpt->writeSeqPushArgLocalThisThatAdd(parser.arg1(), parser.arg2());
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
-                parser.advance();
+                int constant = parser.arg2();
+                advanceParser(parser);
+                string segment = parser.arg1();
+                int segIndex = parser.arg2();
+                codeWriterOpt->writeSeq2PushConstantPopArgLocalThisThat(constant, segment, segIndex);
+
                 return true;
             }
 
-        if ((vmCmdList.at(0) == VmCommandOptType::C_PUSH_ARGUMENT ||
-             vmCmdList.at(0) == VmCommandOptType::C_PUSH_LOCAL ||
-             vmCmdList.at(0) == VmCommandOptType::C_PUSH_THIS ||
-             vmCmdList.at(0) == VmCommandOptType::C_PUSH_THAT) &&
-             vmCmdList.at(1) == VmCommandOptType::C_ARITHMETIC_SUB)
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_CONSTANT &&
+            (vmCmdVec.at(1) == VmCommandOptType::C_POP_STATIC ||
+             vmCmdVec.at(1) == VmCommandOptType::C_POP_TEMP))
             {
-                codeWriterOpt->writeSeqPushArgLocalThisThatSub(parser.arg1(), parser.arg2());
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
-                parser.advance();
+                int constant = parser.arg2();
+                advanceParser(parser);
+                string segment = parser.arg1();
+                int segIndex = parser.arg2();
+                codeWriterOpt->writeSeq2PushConstantPopStaticTemp(constant, segment, segIndex);
+
                 return true;
             }
 
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_TEMP &&
-            vmCmdList.at(1) == VmCommandOptType::C_POP_THAT)
+        // starts with PUSH ARGUMENT|LOCAL|THIS|THAT
+
+        if ((vmCmdVec.at(0) == VmCommandOptType::C_PUSH_ARGUMENT ||
+             vmCmdVec.at(0) == VmCommandOptType::C_PUSH_LOCAL ||
+             vmCmdVec.at(0) == VmCommandOptType::C_PUSH_THIS ||
+             vmCmdVec.at(0) == VmCommandOptType::C_PUSH_THAT) &&
+             vmCmdVec.at(1) == VmCommandOptType::C_ARITHMETIC_ADD)
+            {
+                codeWriterOpt->writeSeq2PushArgLocalThisThatAdd(parser.arg1(), parser.arg2());
+                advanceParser(parser);
+
+                return true;
+            }
+
+        if ((vmCmdVec.at(0) == VmCommandOptType::C_PUSH_ARGUMENT ||
+             vmCmdVec.at(0) == VmCommandOptType::C_PUSH_LOCAL ||
+             vmCmdVec.at(0) == VmCommandOptType::C_PUSH_THIS ||
+             vmCmdVec.at(0) == VmCommandOptType::C_PUSH_THAT) &&
+             vmCmdVec.at(1) == VmCommandOptType::C_ARITHMETIC_SUB)
+            {
+                codeWriterOpt->writeSeq2PushArgLocalThisThatSub(parser.arg1(), parser.arg2());
+                advanceParser(parser);
+
+                return true;
+            }
+
+        // starts with PUSH TEMP
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_TEMP &&
+            vmCmdVec.at(1) == VmCommandOptType::C_POP_THAT)
             {
                 int tempIndex = parser.arg2();
-                parser.advance();
+                advanceParser(parser);
                 int thatIndex = parser.arg2();
+                codeWriterOpt->writeSeq2PushTempPopThat(tempIndex, thatIndex);
 
-                codeWriterOpt->writeSeqPushTempPopThat(tempIndex, thatIndex);
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
                 return true;
             }
 
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_ARGUMENT &&
-            vmCmdList.at(1) == VmCommandOptType::C_POP_POINTER)
+        // starts with PUSH ARGUMENT
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_ARGUMENT &&
+            vmCmdVec.at(1) == VmCommandOptType::C_POP_POINTER)
             {
                 int argIndex = parser.arg2();
-                parser.advance();
+                advanceParser(parser);
                 int pointerIndex = parser.arg2();
+                codeWriterOpt->writeSeq2PushArgumentPopPointer(argIndex, pointerIndex);
 
-                cout << "HERE" << endl;
-
-                codeWriterOpt->writeSeqPushArgumentPopPointer(argIndex, pointerIndex);
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
                 return true;
             }
 
-        if (vmCmdList.at(0) == VmCommandOptType::C_PUSH_STATIC &&
-            vmCmdList.at(1) == VmCommandOptType::C_ARITHMETIC_ADD)
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_ARGUMENT &&
+            vmCmdVec.at(1) == VmCommandOptType::C_POP_TEMP)
             {
-                codeWriterOpt->writeSeqPushStaticAdd(parser.arg2());
-                vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);
-                parser.advance();
+                int argIndex = parser.arg2();
+                advanceParser(parser);
+                int tempIndex = parser.arg2();
+                codeWriterOpt->writeSeq2PushArgumentPopTemp(argIndex, tempIndex);
+
                 return true;
             }
 
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_ARGUMENT &&
+            (vmCmdVec.at(1) == VmCommandOptType::C_POP_ARGUMENT ||
+             vmCmdVec.at(1) == VmCommandOptType::C_POP_LOCAL))
+            {
+                int argIndex = parser.arg2();
+                advanceParser(parser);
+                string segment = parser.arg1();
+                int segIndex = parser.arg2();
+                codeWriterOpt->writeSeq2PushArgumentPopArgLocal(argIndex, segment, segIndex);
+
+                return true;
+            }
+
+        // starts with PUSH STATIC
+
+        if (vmCmdVec.at(0) == VmCommandOptType::C_PUSH_STATIC &&
+            vmCmdVec.at(1) == VmCommandOptType::C_ARITHMETIC_ADD)
+            {
+                codeWriterOpt->writeSeq2PushStaticAdd(parser.arg2());
+                advanceParser(parser);
+
+                return true;
+            }
     }
 
     return false;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-void VmTranslator::translateOptimised(Parser& parser, CodeWriterOptimised* codeWriterOpt)
+void VmTranslator::updateLookAhead(Parser& parser, int skipVectores, int skipParser)
 {
-    static bool globalFunctions = true;
+    vmCmdVec.erase(vmCmdVec.begin(), vmCmdVec.begin() + skipVectores);
+    vmArg2Vec.erase(vmArg2Vec.begin(), vmArg2Vec.begin() + skipVectores);
 
-    if (globalFunctions)
-        codeWriterOpt->writeGlobalFunctions();
-
-    while (!vmCommands.empty() || parser.advance()) {
-
-        switch (parser.commandType()) {
-
-            case VmCommandType::C_ARITHMETIC:
-                codeWriterOpt->writeArithmetic(parser.getCommand());
-                break;
-
-            case VmCommandType::C_PUSH:
-            case VmCommandType::C_POP:
-                codeWriterOpt->writePushPop(parser.commandType(), parser.arg1(), parser.arg2());
-                break;
-
-            case VmCommandType::C_LABEL:
-                codeWriterOpt->writeLabel(parser.arg1());
-                break;
-
-            case VmCommandType::C_GOTO:
-                codeWriterOpt->writeGoto(parser.arg1());
-                break;
-
-            case VmCommandType::C_IF:
-                codeWriterOpt->writeIf(parser.arg1());
-                break;
-
-            case VmCommandType::C_FUNCTION:
-                if (verbose)
-                    cout << "  ~ function " << parser.arg1() << " (allocates " << parser.arg2() << " local vars)" << endl;
-
-                codeWriterOpt->writeFunction(parser.arg1(), parser.arg2());
-                break;
-
-            case VmCommandType::C_CALL:
-                codeWriterOpt->writeCall(parser.arg1(), parser.arg2());
-                break;
-
-            case VmCommandType::C_RETURN:
-                codeWriterOpt->writeReturn();
-                break;
-
-        }
-    }
+    for (int i = 0; i < skipParser; i++)
+        parser.advance();
 }
-*/
 
 void VmTranslator::printHeader()
 {
@@ -391,4 +564,48 @@ void VmTranslator::printHeader()
 
 	cout << endl;
 	cout << "output to file " << fileHandler.getOutputFile() << endl << endl;
+}
+
+void VmTranslator::scanFunctionCalls(string module, string function)
+{
+    string path = fileHandler.getPath();
+    ifstream inStream(path + module + ".vm");
+
+    if (!inStream.good())
+        return;
+
+    Parser parser(inStream);
+
+    while (parser.advance()) {
+
+        if (parser.commandType() == VmCommandType::C_FUNCTION &&
+            parser.arg1() == function)
+            {
+                while (parser.advance() && parser.commandType() != VmCommandType::C_RETURN) {
+
+                    if (parser.commandType() == VmCommandType::C_CALL) {
+                        string arg1 = parser.arg1();
+                        string mod = arg1.substr(0, arg1.find("."));
+
+                        if (funcCallMap.find(mod) == funcCallMap.end()) { // module first entry
+                            set<string> funcSet;
+                            funcCallMap.insert(pair<string, set<string> >(mod, funcSet));
+                            funcCallMap.at(mod).insert(arg1);
+                            scanFunctionCalls(mod, arg1);
+                            scanFunctionCalls(mod, mod + ".init"); // looks for a .init function
+                            continue;
+                        }
+
+                        if (funcCallMap.at(mod).find(arg1) != funcCallMap.at(mod).end()) // already has mod and func
+                            continue;
+
+                        funcCallMap.at(mod).insert(arg1);
+                        scanFunctionCalls(mod, arg1);
+                    }
+                }
+            }
+    }
+
+    if (inStream.is_open())
+        inStream.close();
 }

@@ -73,16 +73,6 @@ class Parser
         VmCommandOptType commandOptType();
 
         /**
-            Returns the type of the supplied VM command. C_ARITHMETIC is returned for all
-            arithmetic commands.
-
-            @param cmd String with VM command.
-
-            @return VmCommandType constant of the current command.
-        */
-        VmCommandType commandType(string cmd);
-
-        /**
             Returns the first argument of the current command. In the case of C_ARITHMETIC,
             the command itself (add, sub, etc.) is returned. Should not be called if the
             current commmand is C_RETURN.

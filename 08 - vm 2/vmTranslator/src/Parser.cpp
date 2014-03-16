@@ -35,19 +35,14 @@ bool Parser::advance()
 
 VmCommandType Parser::commandType()
 {
-    return commandType(cmdVector.front());
-}
-
-VmCommandType Parser::commandType(string cmd)
-{
-    if (cmd == "push")     return VmCommandType::C_PUSH;
-    if (cmd == "pop")      return VmCommandType::C_POP;
-    if (cmd == "label")    return VmCommandType::C_LABEL;
-    if (cmd == "goto")     return VmCommandType::C_GOTO;
-    if (cmd == "if-goto")  return VmCommandType::C_IF;
-    if (cmd == "function") return VmCommandType::C_FUNCTION;
-    if (cmd == "call")     return VmCommandType::C_CALL;
-    if (cmd == "return")   return VmCommandType::C_RETURN;
+    if (cmdVector.front() == "push")     return VmCommandType::C_PUSH;
+    if (cmdVector.front() == "pop")      return VmCommandType::C_POP;
+    if (cmdVector.front() == "label")    return VmCommandType::C_LABEL;
+    if (cmdVector.front() == "goto")     return VmCommandType::C_GOTO;
+    if (cmdVector.front() == "if-goto")  return VmCommandType::C_IF;
+    if (cmdVector.front() == "function") return VmCommandType::C_FUNCTION;
+    if (cmdVector.front() == "call")     return VmCommandType::C_CALL;
+    if (cmdVector.front() == "return")   return VmCommandType::C_RETURN;
 
     return VmCommandType::C_ARITHMETIC;
 }

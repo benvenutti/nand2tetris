@@ -12,7 +12,8 @@ int main(int argc, char** argv)
 	bool verbose = false;
 	bool bootstrap = true;
 	bool comments = true;
-	bool optimise = true;
+	bool optimise = false;
+	bool unusedFunc = true;
 
 	string input("OS_0/");
 
@@ -29,8 +30,15 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	VmTranslator vmTranslator(input, outputFile, verbose, bootstrap, comments, optimise);
+	VmTranslator vmTranslator(input, outputFile, verbose, bootstrap, comments, optimise, unusedFunc);
 	vmTranslator.translate();
+
+	if (vmTranslator.numSkippedFunctions() > 0) {
+		cout << "skipped functions: " << endl;
+		vmTranslator.printSkippedFunctions();
+		cout << "total: " << vmTranslator.numSkippedFunctions() << endl;
+	}
+
 	outputFile.close();
 
 	return 0;
@@ -40,11 +48,13 @@ int main(int argc, char** argv)
 int main(int argc, char** argv)
 {
 	if (argc == 1) {
-		cerr << "usage: vm2hack [-v|-b|-c|-o] fileName.vm|directoryName" << endl;
-		cerr << "       -v verbose" << endl;
+		cerr << "usage: vm2asm [-bclouv] fileName.vm|directoryName" << endl;
 		cerr << "       -b bootstrap" << endl;
 		cerr << "       -c comment .asm file" << endl;
+		cerr << "       -l list unused functions " << endl;
 		cerr << "       -o optimisation" << endl;
+		cerr << "       -u remove unused functions " << endl;
+		cerr << "       -v verbose" << endl;
 		return 1;
 	}
 

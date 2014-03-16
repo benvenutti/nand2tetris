@@ -38,6 +38,16 @@ FileHandler::FileHandler(string input)
 	it = files.begin();
 }
 
+string FileHandler::getPath()
+{
+	return path;
+}
+
+string FileHandler::getCurrentFileName()
+{
+	return currentFileName;
+}
+
 bool FileHandler::isFile()
 {
 	struct stat buf;
@@ -108,6 +118,7 @@ bool FileHandler::nextVmFile(string& fileName)
 		return false;
 
 	fileName = *it;
+	currentFileName = *it;
 	++it;
 
 	return true;

@@ -120,3 +120,68 @@
 
 1394316156 /home/diogo/Dropbox/nand2tetris/projects/08/c++/vmTranslator/include/VmCommandOptType.h
 
+1394928756 source:/home/diogo/tecs/08 - vm 2/vmTranslator/main.cpp
+	<iostream>
+	<string>
+	<unistd.h>
+	<fstream>
+	"VmTranslator.h"
+	"FileHandler.h"
+
+1394927274 /home/diogo/tecs/08 - vm 2/vmTranslator/include/VmTranslator.h
+	"CodeWriter.h"
+	"CodeWriterOpt.h"
+	"Parser.h"
+	"FileHandler.h"
+	<iostream>
+	<string>
+	<vector>
+	<map>
+	<set>
+
+1394315262 /home/diogo/tecs/08 - vm 2/vmTranslator/include/CodeWriter.h
+	"VmCommandType.h"
+	<iostream>
+	<string>
+
+1394481568 /home/diogo/tecs/08 - vm 2/vmTranslator/include/VmCommandType.h
+
+1394547728 /home/diogo/tecs/08 - vm 2/vmTranslator/include/CodeWriterOpt.h
+	"CodeWriter.h"
+
+1394481848 /home/diogo/tecs/08 - vm 2/vmTranslator/include/Parser.h
+	"VmCommandType.h"
+	"VmCommandOptType.h"
+	<string>
+	<fstream>
+	<vector>
+
+1394481570 /home/diogo/tecs/08 - vm 2/vmTranslator/include/VmCommandOptType.h
+
+1394632726 /home/diogo/tecs/08 - vm 2/vmTranslator/include/FileHandler.h
+	<vector>
+	<string>
+
+1394547388 source:/home/diogo/tecs/08 - vm 2/vmTranslator/src/CodeWriter.cpp
+	"CodeWriter.h"
+	"FileHandler.h"
+
+1394632736 source:/home/diogo/tecs/08 - vm 2/vmTranslator/src/FileHandler.cpp
+	"FileHandler.h"
+	<sys/stat.h>
+	<unistd.h>
+	<dirent.h>
+	<iostream>
+
+1394650820 source:/home/diogo/tecs/08 - vm 2/vmTranslator/src/Parser.cpp
+	"Parser.h"
+	<sstream>
+	<iostream>
+
+1394928675 source:/home/diogo/tecs/08 - vm 2/vmTranslator/src/VmTranslator.cpp
+	"VmTranslator.h"
+	<fstream>
+
+1394650776 source:/home/diogo/tecs/08 - vm 2/vmTranslator/src/CodeWriterOpt.cpp
+	"CodeWriterOpt.h"
+
