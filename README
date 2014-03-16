@@ -1,0 +1,7 @@
+nand2tetris
+based on the book "The Elements of Computing Systems"
+
+language: c++
+compiler: gcc
+tested on: ubuntu 12.04
+
