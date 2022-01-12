@@ -279,7 +279,7 @@ bool VmTranslator::translateOptimisedSequence(Parser& parser, CodeWriterOptimise
                 parser.advance();
                 int pointerIndex = parser.arg2();
 
-                cout << "HERE" << endl;
+                //cout << "HERE" << endl;
 
                 codeWriterOpt->writeSeqPushArgumentPopPointer(argIndex, pointerIndex);
                 vmCmdList.erase(vmCmdList.begin(), vmCmdList.begin() + 2);

@@ -6,7 +6,7 @@
 #include "FileHandler.h"
 
 using namespace std;
-
+/*
 int main(int argc, char** argv)
 {
 	bool verbose = false;
@@ -35,8 +35,8 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+*/
 
-/*
 int main(int argc, char** argv)
 {
 	if (argc == 1) {
@@ -101,4 +101,4 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-*/
+
